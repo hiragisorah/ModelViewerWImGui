@@ -32,6 +32,16 @@ struct VertexBoneData
 
 struct Vertex
 {
+	Vertex(DirectX::XMFLOAT3 pos,
+		DirectX::XMFLOAT3 norm,
+		DirectX::XMFLOAT2 uv,
+		VertexBoneData bone_data = {})
+		: position_(pos)
+		, normal_(norm)
+		, texcoord_(uv)
+		, bone_data_(bone_data)
+	{}
+
 	DirectX::XMFLOAT3 position_;
 	DirectX::XMFLOAT3 normal_;
 	DirectX::XMFLOAT2 texcoord_;
@@ -51,6 +61,8 @@ struct Model
 {
 	std::vector<Mesh> meshes_;
 	std::unordered_map<std::string, BoneData> bones_;
+	D3D11_PRIMITIVE_TOPOLOGY topology_;
+	std::string shader_;
 };
 
 struct RenderingObject
@@ -62,7 +74,9 @@ struct RenderingObject
 		unsigned int index_cnt_ = 0;
 	};
 
+	std::string shader_;
 	std::vector<InnerMesh> mesh_;
+	D3D11_PRIMITIVE_TOPOLOGY topology_;
 };
 
 struct Animation
@@ -81,6 +95,8 @@ namespace Graphics
 	ComPtr<ID3D11DeviceContext> & context(void);
 
 	void SetupModel(Model & model);
+	void SetupBones(std::vector<DirectX::XMMATRIX> & bones);
+	void SetupBonesAnim(std::vector<DirectX::XMMATRIX> & bones);
 
 	void LoadShader(std::string path);
 }

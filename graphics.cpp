@@ -25,10 +25,14 @@ struct Shader
 	std::vector<ComPtr<ID3D11Buffer>> constant_buffer_;
 };
 
-std::shared_ptr<Shader> shader_;
+std::unordered_map<std::string, std::shared_ptr<Shader>> shaders_;
 
 D3D11_VIEWPORT viewport_;
-RenderingObject rendering_object_;
+std::vector<RenderingObject> rendering_objects_;
+
+DirectX::XMMATRIX bones_matrix_[255];
+DirectX::XMMATRIX bones_anim_matrix_[255];
+DirectX::XMMATRIX bones_final_matrix_[255];
 
 void Graphics::Initalize(void)
 {
@@ -98,7 +102,18 @@ void Graphics::Initalize(void)
 		vp.TopLeftY = 0.f;
 	}
 
-	LoadShader("test");
+	{
+		D3D11_RASTERIZER_DESC desc = {};
+
+		desc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
+		desc.CullMode = D3D11_CULL_MODE::D3D11_CULL_FRONT;
+
+		ComPtr<ID3D11RasterizerState> rs;
+		
+		device_->CreateRasterizerState(&desc, rs.GetAddressOf());
+
+		context_->RSSetState(rs.Get());
+	}
 }
 
 DXGI_FORMAT GetDxgiFormat(D3D_REGISTER_COMPONENT_TYPE type, BYTE mask)
@@ -223,11 +238,11 @@ void CreateInputLayoutAndConstantBufferFromShader(const std::shared_ptr<Shader>&
 
 void Graphics::LoadShader(std::string path)
 {
-	shader_ = std::make_shared<Shader>();
+	shaders_[path] = std::make_shared<Shader>();
 
 	std::string p = "resource/shader/" + path + ".hlsl";
 
-	auto & s = shader_;
+	auto & s = shaders_[path];
 
 	ID3DBlob * blob = nullptr;
 	ID3DBlob * error = nullptr;
@@ -282,6 +297,9 @@ bool Graphics::Begin(void)
 	context_->OMSetRenderTargets(1, back_buffer_rtv_.GetAddressOf(), dsv_.Get());
 	context_->RSSetViewports(1, &viewport_);
 
+	for (int n = 0; n < 255; ++n)
+		bones_final_matrix_[n] = bones_anim_matrix_[n];
+
 	struct CB
 	{
 		DirectX::XMMATRIX world;
@@ -289,38 +307,58 @@ bool Graphics::Begin(void)
 		DirectX::XMMATRIX proj;
 	} cb;
 
-	cb.world = DirectX::XMMatrixScaling(1.f, 1.f, 1.f);
-	cb.view = DirectX::XMMatrixLookAtLH(DirectX::XMVectorSet(0.f, 20.f, -20.f, 0.f), DirectX::XMVectorZero(), DirectX::XMVectorSet(0.f, 1.f, 0.f, 0.f));
+	static auto rot = 0.f;
+
+	rot += 0.03f;
+	static auto f = 0.08f;
+
+	bool a = GetKeyState(VK_UP) & 0x8000;
+	bool b = GetKeyState(VK_DOWN) & 0x8000;
+	
+
+	f+= (static_cast<int>(a) - static_cast<int>(b)) * 0.003f;
+
+	cb.world = DirectX::XMMatrixScaling(f, f, f) * DirectX::XMMatrixRotationY(rot);
+	cb.view = DirectX::XMMatrixLookAtLH(DirectX::XMVectorSet(0.f, 0.f, -40.f, 0.f), DirectX::XMVectorZero(), DirectX::XMVectorSet(0.f, 1.f, 0.f, 0.f));
 	cb.proj = DirectX::XMMatrixPerspectiveFovLH(DirectX::XM_PIDIV4, 1280.f / 720.f, 0.1f, 1000.f);
 
-	context_->VSSetShader(shader_->vertex_shader_.Get(), nullptr, 0);
-	context_->PSSetShader(shader_->pixel_shader_.Get(), nullptr, 0);
-
-	void * pcb = &cb;
-
-	if (shader_->constant_buffer_[0])
-		context_->UpdateSubresource(shader_->constant_buffer_[0].Get(), 0, nullptr, pcb, 0, 0);
-
-	for (unsigned int n = 0; n < shader_->constant_buffer_.size(); ++n)
+	for (auto & rendering_object_ : rendering_objects_)
 	{
-		if (shader_->constant_buffer_[n])
+		auto & shader_ = shaders_[rendering_object_.shader_];
+		context_->VSSetShader(shader_->vertex_shader_.Get(), nullptr, 0);
+		context_->PSSetShader(shader_->pixel_shader_.Get(), nullptr, 0);
+
+		void * pcb = &cb;
+
+		if (shader_->constant_buffer_[0])
+			context_->UpdateSubresource(shader_->constant_buffer_[0].Get(), 0, nullptr, pcb, 0, 0);
+
+		pcb = bones_final_matrix_;
+
+		if (shader_->constant_buffer_.size() > 1 && shader_->constant_buffer_[1])
+			context_->UpdateSubresource(shader_->constant_buffer_[1].Get(), 0, nullptr, pcb, 0, 0);
+
+		for (unsigned int n = 0; n < shader_->constant_buffer_.size(); ++n)
 		{
-			context_->VSSetConstantBuffers(n, 1, shader_->constant_buffer_[n].GetAddressOf());
-			context_->PSSetConstantBuffers(n, 1, shader_->constant_buffer_[n].GetAddressOf());
+			if (shader_->constant_buffer_[n])
+			{
+				context_->VSSetConstantBuffers(n, 1, shader_->constant_buffer_[n].GetAddressOf());
+				context_->PSSetConstantBuffers(n, 1, shader_->constant_buffer_[n].GetAddressOf());
+			}
 		}
-	}
 
-	context_->IASetInputLayout(shader_->input_layout_.Get());
+		context_->IASetInputLayout(shader_->input_layout_.Get());
 
-	for (auto & mesh : rendering_object_.mesh_)
-	{
-		context_->IASetIndexBuffer(mesh.index_buffer_.Get(), DXGI_FORMAT_R32_UINT, 0);
-		auto stride = 32U;
-		auto offset = 0U;
-		context_->IASetVertexBuffers(0, 1, mesh.vertex_buffer_.GetAddressOf(), &stride, &offset);
-		context_->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		for (auto & mesh : rendering_object_.mesh_)
+		{
+			context_->IASetIndexBuffer(mesh.index_buffer_.Get(), DXGI_FORMAT_R32_UINT, 0);
+			auto stride = sizeof(Vertex);
+			auto offset = 0U;
+			context_->IASetVertexBuffers(0, 1, mesh.vertex_buffer_.GetAddressOf(), &stride, &offset);
+			context_->IASetPrimitiveTopology(rendering_object_.topology_);
 
-		context_->DrawIndexed(mesh.index_cnt_, 0, 0);
+			context_->DrawIndexed(mesh.index_cnt_, 0, 0);
+		}
 	}
 
 	return true;
@@ -349,7 +387,12 @@ ComPtr<ID3D11DeviceContext>& Graphics::context(void)
 
 void Graphics::SetupModel(Model & model)
 {
+	rendering_objects_.emplace_back(RenderingObject());
+
+	auto & rendering_object_ = rendering_objects_.back();
+
 	rendering_object_.mesh_.resize(model.meshes_.size());
+	rendering_object_.shader_ = model.shader_;
 
 	for (unsigned int n = 0; n < model.meshes_.size(); ++n)
 	{
@@ -385,5 +428,27 @@ void Graphics::SetupModel(Model & model)
 
 			device_->CreateBuffer(&bd, &sd, index_buffer.GetAddressOf());
 		}
+	}
+
+	rendering_object_.topology_ = model.topology_;
+
+	LoadShader(rendering_object_.shader_);
+}
+
+void Graphics::SetupBones(std::vector<DirectX::XMMATRIX> & bones)
+{
+	auto size = bones.size();
+	for (auto n = 0U; n < size; ++n)
+	{
+		bones_matrix_[n] = bones[n];
+	}
+}
+
+void Graphics::SetupBonesAnim(std::vector<DirectX::XMMATRIX>& bones)
+{
+	auto size = bones.size();
+	for (auto n = 0U; n < size; ++n)
+	{
+		bones_anim_matrix_[n] = bones[n];
 	}
 }

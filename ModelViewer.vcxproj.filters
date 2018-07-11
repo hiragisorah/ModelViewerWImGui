@@ -16,6 +16,12 @@
     <Filter Include="ソース ファイル\imgui">
       <UniqueIdentifier>{b8ef9cfe-74c1-42d1-b8f6-dd3d21ae15ed}</UniqueIdentifier>
     </Filter>
+    <Filter Include="リソース ファイル\model">
+      <UniqueIdentifier>{989e37c5-5f3e-4e96-a667-10eb74c78aa3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="リソース ファイル\shader">
+      <UniqueIdentifier>{7a2d3c82-aba9-4efb-9d68-eef4f212ec68}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -46,6 +52,9 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="app2.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="assimp-converter.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -83,6 +92,12 @@
     <ClInclude Include="app2.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="assimp-converter.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Natvis Include="imgui\imgui.natvis">
@@ -91,5 +106,30 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="resource\model\duck.fbx">
+      <Filter>リソース ファイル\model</Filter>
+    </None>
+    <None Include="resource\model\jeep1.fbx">
+      <Filter>リソース ファイル\model</Filter>
+    </None>
+    <None Include="resource\model\kaoru.fbx">
+      <Filter>リソース ファイル\model</Filter>
+    </None>
+    <None Include="resource\model\xbot.fbx">
+      <Filter>リソース ファイル\model</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="resource\shader\test.hlsl">
+      <Filter>リソース ファイル\shader</Filter>
+    </FxCompile>
+    <FxCompile Include="resource\shader\skinned.hlsl">
+      <Filter>リソース ファイル\shader</Filter>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="ModelViewer.rc">
+      <Filter>リソース ファイル</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

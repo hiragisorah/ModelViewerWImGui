@@ -1,4 +1,5 @@
 #include "app2.h"
+#include "assimp-converter.h"
 #include <iostream>
 
 int main(void)

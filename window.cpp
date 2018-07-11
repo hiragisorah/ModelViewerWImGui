@@ -3,6 +3,7 @@
 #include "imgui\imgui.h"
 #include "imgui\imgui_impl_dx11.h"
 #include "imgui\imgui_impl_win32.h"
+#include "resource.h"
 
 extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
@@ -30,6 +31,7 @@ namespace Window
 			wc.hIcon = LoadIconA(nullptr, IDI_APPLICATION);
 			wc.hCursor = LoadCursorA(nullptr, IDC_ARROW);
 			wc.hbrBackground = (HBRUSH)GetStockObject(DKGRAY_BRUSH);
+			wc.lpszMenuName = MAKEINTRESOURCE(IDR_MENU1);
 			wc.lpszClassName = caption_.c_str();
 			wc.hIconSm = LoadIconA(nullptr, IDI_APPLICATION);
 			RegisterClassExA(&wc);
@@ -121,6 +123,17 @@ namespace Window
 		case WM_DESTROY:
 			PostQuitMessage(0);
 			return 0;
+
+		case WM_COMMAND:
+			{
+				int menuID = LOWORD(wParam);
+				switch(menuID)
+				{
+				case ID_TEST_A:
+					DestroyWindow(hWnd);
+					break;
+	}
+				}
 		}
 		return DefWindowProc(hWnd, msg, wParam, lParam);
 	}
