@@ -35,7 +35,7 @@ namespace App2
 
 		for (unsigned int n = 0; n < cnt; ++n)
 		{
-			auto matrix = XMMatrixInverse(nullptr, kaoru.get_bone_offset_matrix(n)) * matrices[n] * kaoru.get_bone_offset_matrix(n);
+			auto matrix = matrices[n];
 
 			int target = n;
 			int id = 0;
@@ -50,11 +50,11 @@ namespace App2
 
 				//std::cout << kaoru.get_bone_name(target) << " - " << id << std::endl;
 
-				matrix = XMMatrixInverse(nullptr, kaoru.get_bone_offset_matrix(id)) * matrices[id] * kaoru.get_bone_offset_matrix(id) * matrix;
+				matrix = matrices[id] * matrix;
 				target = id;
 			}
 
-			matrix = matrix;
+			matrix = /*kaoru.get_global_inverse_matrix() **/ matrix * kaoru.get_bone_offset_matrix(n);
 
 			matrices_.emplace_back(matrix);
 		}
