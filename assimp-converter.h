@@ -20,6 +20,11 @@ public:
 		std::vector<int> children_id_;
 	};
 
+	struct Material
+	{
+		std::string texture_;
+	};
+
 	struct VertexBoneData
 	{
 		unsigned int id_[4];
@@ -44,9 +49,12 @@ private:
 			VertexBoneData bone_;
 		};
 
+		DirectX::XMMATRIX matrix_;
 		std::vector<Vertex> vertices_;
 		std::vector<unsigned int> indices_;
-		std::string name_;
+		std::string name_ = "";
+
+		int material_id_ = -1;
 	};
 
 public:
@@ -58,6 +66,7 @@ private:
 private:
 	std::vector<PrivateMesh> mesh_list_;
 	std::vector<Bone> bones_;
+	std::vector<Material> materials_;
 	DirectX::XMMATRIX global_inverse_matrix_;
 
 private:
@@ -72,6 +81,7 @@ public:
 	const unsigned int get_index_cnt(const unsigned int & mesh_num) const;
 	const unsigned int get_bone_cnt(void) const;
 	const std::string & get_mesh_name(const unsigned int & mesh_num) const;
+	const DirectX::XMMATRIX & get_mesh_transformation(const unsigned int & mesh_num) const;
 	const unsigned int & get_index(const unsigned int & mesh_num, const unsigned int & index_num) const;
 	const DirectX::XMFLOAT3 & get_position(const unsigned int & mesh_num, const unsigned int & vtx_num) const;
 	const DirectX::XMFLOAT3 & get_normal(const unsigned int & mesh_num, const unsigned int & vtx_num) const;
@@ -79,17 +89,20 @@ public:
 	const DirectX::XMMATRIX & get_bone_matrix(const unsigned int & bone_num) const;
 	const DirectX::XMMATRIX & get_bone_offset_matrix(const unsigned int & bone_num) const;
 	const std::string & get_bone_name(const unsigned int & bone_num) const;
-	const int get_bone_id(const std::string name);
+	const int get_bone_id(const std::string name) const;
 	const unsigned int & get_bone_id(const unsigned int & mesh_num, const unsigned int & vtx_num, const unsigned int & bone_index) const;
 	const int & get_bone_parent_id(const unsigned int & bone_id) const;
 	const unsigned int get_bone_child_cnt(const unsigned int & bone_id) const;
 	const int & get_bone_child_id(const unsigned int & bone_id, const unsigned int & child_id) const;
 	const float & get_bone_weight(const unsigned int & mesh_num, const unsigned int & vtx_num, const unsigned int & bone_index) const;
+	const int & get_material_id(const unsigned int & mesh_num) const;
+	const std::string & get_texture_name(const int & material_id) const;
 	const DirectX::XMMATRIX & get_global_inverse_matrix(void) const;
 
 private:
 	bool ProcessNode(aiNode * node);
 	bool ProcessMesh(PrivateMesh & mesh, aiMesh * assimp_mesh);
+	bool ProcessMaterials(void);
 	void ProcessPositions(PrivateMesh & mesh, aiMesh * assimp_mesh);
 	void ProcessNormals(PrivateMesh & mesh, aiMesh * assimp_mesh);
 	void ProcessTexCoords(PrivateMesh & mesh, aiMesh * assimp_mesh);

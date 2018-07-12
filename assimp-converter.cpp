@@ -23,6 +23,7 @@ AssimpModel::AssimpModel(std::string file_name)
 
 	auto & root = importer.GetScene()->mRootNode;
 
+	ProcessMaterials();
 	ProcessNode(root);
 }
 
@@ -103,6 +104,11 @@ const std::string & AssimpModel::get_mesh_name(const unsigned int & mesh_num) co
 	return this->mesh_list_[mesh_num].name_;
 }
 
+const DirectX::XMMATRIX & AssimpModel::get_mesh_transformation(const unsigned int & mesh_num) const
+{
+	return this->mesh_list_[mesh_num].matrix_;
+}
+
 const unsigned int & AssimpModel::get_index(const unsigned int & mesh_num, const unsigned int & index_num) const
 {
 	return this->mesh_list_[mesh_num].indices_[index_num];
@@ -138,7 +144,7 @@ const std::string & AssimpModel::get_bone_name(const unsigned int & bone_num) co
 	return this->bones_[bone_num].name_;
 }
 
-const int AssimpModel::get_bone_id(const std::string name)
+const int AssimpModel::get_bone_id(const std::string name) const
 {
 	int ret = -1;
 
@@ -175,6 +181,16 @@ const float & AssimpModel::get_bone_weight(const unsigned int & mesh_num, const 
 	return this->mesh_list_[mesh_num].vertices_[vtx_num].bone_.weight_[bone_index];
 }
 
+const int & AssimpModel::get_material_id(const unsigned int & mesh_num) const
+{
+	return this->mesh_list_[mesh_num].material_id_;
+}
+
+const std::string & AssimpModel::get_texture_name(const int & material_id) const
+{
+	return this->materials_[material_id].texture_;
+}
+
 const DirectX::XMMATRIX & AssimpModel::get_global_inverse_matrix(void) const
 {
 	return this->global_inverse_matrix_;
@@ -193,6 +209,7 @@ bool AssimpModel::ProcessNode(aiNode * node)
 		this->mesh_list_.emplace_back(PrivateMesh());
 		auto & mesh = this->mesh_list_.back();
 		auto & assimp_mesh = scene->mMeshes[node->mMeshes[n]];
+		mesh.matrix_ = aiMatrix4x42XMMATRIX(node->mTransformation);
 		this->ProcessMesh(mesh, assimp_mesh);
 	}
 
@@ -219,6 +236,8 @@ bool AssimpModel::ProcessMesh(PrivateMesh & mesh, aiMesh * assimp_mesh)
 		|| !assimp_mesh->HasTextureCoords(0))
 		return false;
 
+	mesh.material_id_ = assimp_mesh->mMaterialIndex;
+
 	for (unsigned int n = 0; n < assimp_mesh->mNumFaces; ++n)
 	{
 		aiFace & face = assimp_mesh->mFaces[n];
@@ -233,6 +252,23 @@ bool AssimpModel::ProcessMesh(PrivateMesh & mesh, aiMesh * assimp_mesh)
 	this->ProcessBones(mesh, assimp_mesh);
 
 	return true;
+}
+
+bool AssimpModel::ProcessMaterials(void)
+{
+	auto scene = importer.GetScene();
+
+	if (!scene->HasMaterials())
+		return false;
+
+	aiString str;
+	for (int n = 0; n < scene->mNumMaterials; ++n)
+	{
+		auto & mat = this->materials_[n];
+		auto & ass_mat = scene->mMaterials[n];
+		ass_mat->GetTexture(aiTextureType_DIFFUSE, 0, &str);
+		mat.texture_ = str.C_Str();
+	}
 }
 
 void AssimpModel::ProcessPositions(PrivateMesh & mesh, aiMesh * assimp_mesh)
@@ -276,7 +312,7 @@ void AssimpModel::ProcessBones(PrivateMesh & mesh, aiMesh * assimp_mesh)
 	for (unsigned int n = 0; n < assimp_mesh->mNumBones; ++n)
 	{
 		auto & bone = assimp_mesh->mBones[n];
-
+		
 		std::string bone_name = bone->mName.C_Str();
 
 		unsigned int bone_id = 0;
