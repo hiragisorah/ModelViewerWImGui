@@ -148,7 +148,7 @@ const int AssimpModel::get_bone_id(const std::string name) const
 {
 	int ret = -1;
 
-	auto search = std::find_if(this->bones_.begin(), this->bones_.end(), [&](Bone & a) { return a.name_ == name.c_str(); });
+	auto search = std::find_if(this->bones_.begin(), this->bones_.end(), [&](const Bone & a) { return a.name_ == name.c_str(); });
 
 	if (search != this->bones_.end())
 		ret = std::distance(this->bones_.begin(), search);
@@ -260,6 +260,8 @@ bool AssimpModel::ProcessMaterials(void)
 
 	if (!scene->HasMaterials())
 		return false;
+
+	this->materials_.resize(scene->mNumMaterials);
 
 	aiString str;
 	for (int n = 0; n < scene->mNumMaterials; ++n)

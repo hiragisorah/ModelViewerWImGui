@@ -8,34 +8,41 @@ namespace App2
 	Model model_;
 	std::vector<XMMATRIX> matrices_;
 	std::vector<XMMATRIX> matrices_anim_;
-
+	Model bones_;
 	void Initalize(void)
 	{
 		AssimpModel kaoru("xbot.fbx");
 		Mesh mesh;
+		Mesh bones;
 
 		auto cnt = kaoru.get_bone_cnt();
 
 		std::vector<XMMATRIX> matrices;
-		
+
+		bones_.meshes_.emplace_back(bones);
+
+		bones_.shader_ = "test";
+		bones_.topology_ = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST;
+
 		matrices.resize(cnt);
 
 		for (unsigned int n = 0; n < cnt; ++n)
 		{
-			matrices[n] = kaoru.get_bone_matrix(n);
+			matrices[n] = XMMatrixIdentity();
 			//matrices[n] = kaoru.get_bone_offset_matrix(n) * kaoru.get_bone_matrix(n) * XMMatrixInverse(nullptr, kaoru.get_bone_offset_matrix(n));
 		}
 
 		int n = kaoru.GetBoneIdByName("mixamorig:RightArm");
 		auto & mtx = matrices[n];
-		mtx *= XMMatrixRotationY(-0.5f);
+		mtx = XMMatrixRotationY(-1.6f);
 
-		//auto & mtx2 = matrices[kaoru.GetBoneIdByName("mixamorig:RightHand")];
-		//mtx2 = XMMatrixRotationY(-0.5f) * mtx2;
+		//int n = kaoru.GetBoneIdByName("mixamorig:RightHand");
+		//auto & mtx2 = matrices[n];
+		//mtx2 = XMMatrixRotationY(-1.6f);
 
 		for (unsigned int n = 0; n < cnt; ++n)
 		{
-			auto matrix = matrices[n];
+			auto matrix = kaoru.get_bone_offset_matrix(n)* matrices[n] * XMMatrixInverse(nullptr, kaoru.get_bone_offset_matrix(n)) * kaoru.get_bone_matrix(n);
 
 			int target = n;
 			int id = 0;
@@ -50,14 +57,21 @@ namespace App2
 
 				//std::cout << kaoru.get_bone_name(target) << " - " << id << std::endl;
 
-				matrix = matrices[id] * matrix;
+				matrix = kaoru.get_bone_offset_matrix(id)* matrices[id] * XMMatrixInverse(nullptr, kaoru.get_bone_offset_matrix(id))  * kaoru.get_bone_matrix(id) * matrix;
 				target = id;
 			}
+
+
+			auto & pos = matrix.r[3];
+			bones.vertices_.emplace_back(XMFLOAT3(XMVectorGetX(pos), XMVectorGetY(pos), XMVectorGetZ(pos)), XMFLOAT3(0, 0, 0), XMFLOAT2(0, 0));
+			bones.indices_.emplace_back(n);
 
 			matrix = /*kaoru.get_global_inverse_matrix() **/ matrix * kaoru.get_bone_offset_matrix(n);
 
 			matrices_.emplace_back(matrix);
 		}
+
+		bones_.meshes_.emplace_back(bones);
 
 		Graphics::SetupBonesAnim(matrices_);
 
@@ -95,6 +109,7 @@ namespace App2
 		//
 
 		Graphics::SetupModel(model_);
+		Graphics::SetupModel(bones_);
 	}
 
 	void Finalize(void)
