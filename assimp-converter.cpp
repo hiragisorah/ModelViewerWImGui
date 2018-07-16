@@ -66,7 +66,7 @@ aiNode * const AssimpModel::FindNodeRecursiveByName(aiNode * const node, const s
 	return ret;
 }
 
-aiNodeAnim * const AssimpModel::FindNodeAnim(const unsigned int & anim_num, const std::string node_name) const
+aiNodeAnim * const AssimpModel::FindNodeAnim(const unsigned int & anim_num, const std::string bone_name) const
 {
 	auto scene = this->importer_.GetScene();
 
@@ -79,23 +79,11 @@ aiNodeAnim * const AssimpModel::FindNodeAnim(const unsigned int & anim_num, cons
 	{
 		auto node_anim = animation->mChannels[n];
 
-		if (std::string(node_anim->mNodeName.data) == node_name)
+		if (std::string(node_anim->mNodeName.data) == bone_name)	
 			return node_anim;
 	}
 
 	return nullptr;
-}
-
-const int AssimpModel::GetBoneIdByName(const std::string name) const
-{
-	int ret = -1;
-
-	auto search = std::find_if(this->bones_.begin(), this->bones_.end(), [&](const Bone & a) { return a.name_ == name; });
-
-	if (search != this->bones_.end())
-		ret = std::distance(this->bones_.begin(), search);
-
-	return ret;
 }
 
 const unsigned int AssimpModel::get_mesh_cnt(void) const
@@ -248,6 +236,54 @@ const XMFLOAT4 & AssimpModel::get_transparent(const int & material_id) const
 const XMFLOAT4 & AssimpModel::get_reflective(const int & material_id) const
 {
 	return this->materials_[material_id].reflective_;
+}
+
+const unsigned int & AssimpModel::get_anim_cnt(void) const
+{
+	return this->importer_.GetScene()->mNumAnimations;
+}
+
+const unsigned int & AssimpModel::get_anim_position_key_cnt(const unsigned int & anim_num, const std::string & bone_name) const
+{
+	auto anim = this->FindNodeAnim(anim_num, bone_name);
+
+	return anim->mNumPositionKeys;
+}
+
+const unsigned int & AssimpModel::get_anim_rotation_key_cnt(const unsigned int & anim_num, const std::string & bone_name) const
+{
+	auto anim = this->FindNodeAnim(anim_num, bone_name);
+
+	return anim->mNumRotationKeys;
+}
+
+const unsigned int & AssimpModel::get_anim_scale_key_cnt(const unsigned int & anim_num, const std::string & bone_name) const
+{
+	auto anim = this->FindNodeAnim(anim_num, bone_name);
+
+	return anim->mNumScalingKeys;
+}
+
+const XMFLOAT3 AssimpModel::get_animation_position(const unsigned int & anim_num, const unsigned int & key_num, const std::string & bone_name) const
+{
+	auto anim = this->FindNodeAnim(anim_num, bone_name);
+
+	return XMFLOAT3(reinterpret_cast<float*>(&anim->mPositionKeys[key_num].mValue));
+}
+
+const XMMATRIX AssimpModel::get_animation_rotation(const unsigned int & anim_num, const unsigned int & key_num, const std::string & bone_name) const
+{
+	auto anim = this->FindNodeAnim(anim_num, bone_name);
+
+	aiMatrix4x4 mt = static_cast<aiMatrix4x4>(anim->mRotationKeys[key_num].mValue.GetMatrix());
+	return aiMatrix4x42XMMATRIX(mt);
+}
+
+const XMFLOAT3 AssimpModel::get_animation_scale(const unsigned int & anim_num, const unsigned int & key_num, const std::string & bone_name) const
+{
+	auto anim = this->FindNodeAnim(anim_num, bone_name);
+
+	return XMFLOAT3(reinterpret_cast<float*>(&anim->mScalingKeys[key_num].mValue));
 }
 
 bool AssimpModel::ProcessNode(aiNode * node)
@@ -464,10 +500,10 @@ void AssimpModel::UpdateBone(void)
 
 		if (node->mParent)
 		{
-			bone.parent_id_ = this->GetBoneIdByName(node->mParent->mName.C_Str());
+			bone.parent_id_ = this->get_bone_id(node->mParent->mName.C_Str());
 			if (bone.parent_id_ != -1)
 			{
-				this->bones_[bone.parent_id_].children_id_.emplace_back(this->GetBoneIdByName(bone.name_));
+				this->bones_[bone.parent_id_].children_id_.emplace_back(this->get_bone_id(bone.name_));
 			}
 		}
 		else

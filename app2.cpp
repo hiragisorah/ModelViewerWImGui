@@ -51,24 +51,40 @@ namespace App2
 		auto matrix = XMMatrixIdentity();
 
 		static float f = 0.f;
+		static std::unordered_map<unsigned int, unsigned int> z;
 
-		if (assimp_model.GetBoneIdByName("mixamorig:RightForeArm") == x)
-			matrix = XMMatrixRotationZ(f);
+		//if (assimp_model.get_bone_id("mixamorig:RightForeArm") == x)
+		//	matrix = XMMatrixRotationZ(f);
 
-		if (assimp_model.GetBoneIdByName("mixamorig:RightArm") == x)
-			matrix = XMMatrixRotationY(f);
+		//if (assimp_model.get_bone_id("mixamorig:RightArm") == x)
+		//	matrix = XMMatrixRotationY(f);
+		auto bone_name = test->get_bone_name(x);
 
-		if (assimp_model.GetBoneIdByName("mixamorig:RightHand") == x)
-			matrix = XMMatrixRotationZ(f);
+;		auto rot = test->get_animation_rotation(0, z[x], bone_name);
 
-		if (assimp_model.GetBoneIdByName("mixamorig:RightLeg") == x)
-			matrix = XMMatrixRotationZ(f);
+		if (++z[x] >= test->get_anim_rotation_key_cnt(0, bone_name))
+			z[x] = 0;
 
-		if (assimp_model.GetBoneIdByName("mixamorig:LeftLeg") == x)
-			matrix = XMMatrixRotationY(f);
+		matrix = rot;
+
+		//if (assimp_model.get_bone_id("mixamorig:RightHand") == x)
+		//{
+		//	auto pos = test->get_animation_position(0, 0, "mixamorig:RightHand");
+		//	auto scl = test->get_animation_scale(0, 0, "mixamorig:RightHand");
+		//	auto rot = test->get_animation_rotation(0, 0, "mixamorig:RightHand");
+
+		//	matrix = rot;
+		//}
+
+		//if (assimp_model.get_bone_id("mixamorig:RightLeg") == x)
+		//	matrix = XMMatrixRotationZ(f);
+
+		//if (assimp_model.get_bone_id("mixamorig:LeftLeg") == x)
+		//	matrix = XMMatrixRotationY(f);
 
 		bones[x] = assimp_model.get_bone_offset_matrix(x)
 			* matrix * XMMatrixInverse(nullptr, assimp_model.get_bone_offset_matrix(x)) * parent_matrix * assimp_model.get_bone_matrix(x);
+
 
 		f += 0.001f;
 
@@ -160,7 +176,7 @@ namespace App2
 
 	void Initalize(void)
 	{
-		test = new AssimpModel("xbot.fbx");
+		test = new AssimpModel("boxing.fbx");
 		//ShowStaticModel(test);
 		ShowBone(*test);
 		ShowSkinnedModel(*test);
