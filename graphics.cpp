@@ -179,7 +179,7 @@ void CreateInputLayoutAndConstantBufferFromShader(const std::shared_ptr<Shader>&
 
 	shader->constant_buffer_.resize(shader_desc.ConstantBuffers);
 
-	for (unsigned int n = 0; n < shader_desc.ConstantBuffers; ++n)
+	for (auto n = 0U; n < shader_desc.ConstantBuffers; ++n)
 	{
 		int size = 0;
 		auto cb = reflector->GetConstantBufferByIndex(n);
@@ -342,7 +342,7 @@ bool Graphics::Begin(void)
 			if (shader_->constant_buffer_.size() > 1 && shader_->constant_buffer_[1])
 				context_->UpdateSubresource(shader_->constant_buffer_[1].Get(), 0, nullptr, pcb, 0, 0);
 
-			for (unsigned int n = 0; n < shader_->constant_buffer_.size(); ++n)
+			for (auto n = 0U; n < shader_->constant_buffer_.size(); ++n)
 			{
 				if (shader_->constant_buffer_[n])
 				{
@@ -394,7 +394,7 @@ void Graphics::SetupModel(Model & model)
 	rendering_object_.mesh_.resize(model.meshes_.size());
 	rendering_object_.shader_ = model.shader_;
 
-	for (unsigned int n = 0; n < model.meshes_.size(); ++n)
+	for (auto n = 0U; n < model.meshes_.size(); ++n)
 	{
 		auto & vertex_buffer = rendering_object_.mesh_[n].vertex_buffer_;
 		auto & index_buffer = rendering_object_.mesh_[n].index_buffer_;

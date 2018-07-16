@@ -56,14 +56,9 @@ bool AssimpModel::Init(std::string file_name)
 	else
 	{
 		std::cout << file_name.c_str() << " exported." << std::endl;
-		//return true;
 	}
 
 	this->mesh_list_.clear();
-
-	auto aimatrix = scene->mRootNode->mTransformation.Inverse();
-
-	this->global_inverse_matrix_ = XMMatrixInverse(nullptr, aiMatrix4x42XMMATRIX(aimatrix));
 
 	return true;
 }
@@ -72,7 +67,7 @@ aiNode * const AssimpModel::FindNodeRecursiveByName(aiNode * const node, std::st
 {
 	aiNode * ret = node->FindNode(name.c_str());
 
-	for (unsigned int n = 0; n < node->mNumChildren && ret == nullptr; ++n)
+	for (auto n = 0U; n < node->mNumChildren && ret == nullptr; ++n)
 		ret = this->FindNodeRecursiveByName(node->mChildren[n], name);
 
 	return ret;
@@ -150,11 +145,6 @@ const XMMATRIX & AssimpModel::get_bone_offset_matrix(const unsigned int & bone_n
 	return this->bones_[bone_num].offset_matrix_;
 }
 
-const DirectX::XMMATRIX & AssimpModel::get_bone_final_offset_matrix(const unsigned int & bone_num) const
-{
-	return this->bones_[bone_num].final_offset_matrix_;
-}
-
 const std::string & AssimpModel::get_bone_name(const unsigned int & bone_num) const
 {
 	return this->bones_[bone_num].name_;
@@ -207,11 +197,6 @@ const std::string & AssimpModel::get_texture_name(const int & material_id) const
 	return this->materials_[material_id].texture_;
 }
 
-const DirectX::XMMATRIX & AssimpModel::get_global_inverse_matrix(void) const
-{
-	return this->global_inverse_matrix_;
-}
-
 bool AssimpModel::ProcessNode(aiNode * node)
 {
 	auto scene = importer.GetScene();
@@ -220,7 +205,7 @@ bool AssimpModel::ProcessNode(aiNode * node)
 
 	if (!scene->HasMeshes()) return false;
 
-	for (unsigned int n = 0; n < node->mNumMeshes; ++n)
+	for (auto n = 0U; n < node->mNumMeshes; ++n)
 	{
 		this->mesh_list_.emplace_back(PrivateMesh());
 		auto & mesh = this->mesh_list_.back();
@@ -241,7 +226,7 @@ bool AssimpModel::ProcessNode(aiNode * node)
 	}
 
 	indent++;
-	for (unsigned int n = 0; n < node->mNumChildren; ++n)
+	for (auto n = 0U; n < node->mNumChildren; ++n)
 	{
 		for (unsigned int i = 0; i < indent; ++i)
 		{
@@ -263,7 +248,7 @@ bool AssimpModel::ProcessMesh(PrivateMesh & mesh, aiMesh * assimp_mesh)
 
 	mesh.material_id_ = assimp_mesh->mMaterialIndex;
 
-	for (unsigned int n = 0; n < assimp_mesh->mNumFaces; ++n)
+	for (auto n = 0U; n < assimp_mesh->mNumFaces; ++n)
 	{
 		aiFace & face = assimp_mesh->mFaces[n];
 
@@ -304,7 +289,7 @@ void AssimpModel::ProcessPositions(PrivateMesh & mesh, aiMesh * assimp_mesh)
 {
 	mesh.vertices_.resize(assimp_mesh->mNumVertices);
 
-	for (unsigned int n = 0; n < assimp_mesh->mNumVertices; ++n)
+	for (auto n = 0U; n < assimp_mesh->mNumVertices; ++n)
 	{
 		auto & pos = mesh.vertices_[n].position_;
 		auto & assimp_pos = assimp_mesh->mVertices[n];
@@ -314,7 +299,7 @@ void AssimpModel::ProcessPositions(PrivateMesh & mesh, aiMesh * assimp_mesh)
 
 void AssimpModel::ProcessNormals(PrivateMesh & mesh, aiMesh * assimp_mesh)
 {
-	for (unsigned int n = 0; n < assimp_mesh->mNumVertices; ++n)
+	for (auto n = 0U; n < assimp_mesh->mNumVertices; ++n)
 	{
 		auto & norm = mesh.vertices_[n].normal_;
 		auto & assimp_norm = assimp_mesh->mNormals[n];
@@ -324,7 +309,7 @@ void AssimpModel::ProcessNormals(PrivateMesh & mesh, aiMesh * assimp_mesh)
 
 void AssimpModel::ProcessTexCoords(PrivateMesh & mesh, aiMesh * assimp_mesh)
 {
-	for (unsigned int n = 0; n < assimp_mesh->mNumVertices; ++n)
+	for (auto n = 0U; n < assimp_mesh->mNumVertices; ++n)
 	{
 		auto & uv = mesh.vertices_[n].texcoord_;
 		auto & assimp_uv = assimp_mesh->mTextureCoords[0][n];
@@ -338,7 +323,7 @@ void AssimpModel::ProcessBones(PrivateMesh & mesh, aiMesh * assimp_mesh)
 
 	vertices_bones.resize(assimp_mesh->mNumVertices);
 
-	for (unsigned int n = 0; n < assimp_mesh->mNumBones; ++n)
+	for (auto n = 0U; n < assimp_mesh->mNumBones; ++n)
 	{
 		auto & bone = assimp_mesh->mBones[n];
 		
@@ -388,7 +373,7 @@ void AssimpModel::ProcessBones(PrivateMesh & mesh, aiMesh * assimp_mesh)
 		vertices_bone.resize(4);
 	}
 
-	for (unsigned int n = 0; n < assimp_mesh->mNumVertices; ++n)
+	for (auto n = 0U; n < assimp_mesh->mNumVertices; ++n)
 	{
 		auto & vtx = mesh.vertices_[n];
 		for (unsigned int i = 0; i < 4U; ++i)
@@ -418,20 +403,6 @@ void AssimpModel::UpdateBone(void)
 		else
 		{
 			bone.parent_id_ = -1;
-		}
-	}
-
-	for (auto & bone : this->bones_)
-	{
-		auto parent_id = bone.parent_id_;
-
-		bone.final_offset_matrix_ = bone.offset_matrix_;
-
-		while (parent_id != -1)
-		{
-			bone.final_offset_matrix_ *= this->bones_[parent_id].offset_matrix_ /** bone.final_offset_matrix_*/;
-
-			parent_id = this->bones_[parent_id].parent_id_;
 		}
 	}
 }

@@ -16,7 +16,7 @@ namespace App2
 
 		model.meshes_.resize(assimp_model.get_mesh_cnt());
 
-		for (unsigned int n = 0; n < mesh_cnt; ++n)
+		for (auto n = 0U; n < mesh_cnt; ++n)
 		{
 			auto & mesh = model.meshes_[n];
 
@@ -52,19 +52,17 @@ namespace App2
 
 		static float f = 0.f;
 
-		if (assimp_model.GetBoneIdByName("mixamorig:RightForeArm") == x)
-			matrix = XMMatrixRotationZ(f);
+		//if (assimp_model.GetBoneIdByName("mixamorig:RightForeArm") == x)
+		//	matrix = XMMatrixRotationZ(f);
 
-		if (assimp_model.GetBoneIdByName("mixamorig:RightArm") == x)
-			matrix = XMMatrixRotationY(f);
+		//if (assimp_model.GetBoneIdByName("mixamorig:RightArm") == x)
+		//	matrix = XMMatrixRotationY(f);
 
-		if (assimp_model.GetBoneIdByName("mixamorig:RightHand") == x)
-			matrix = XMMatrixRotationZ(f);
+		//if (assimp_model.GetBoneIdByName("mixamorig:RightHand") == x)
+		//	matrix = XMMatrixRotationZ(f);
 
-		auto my_matrix = XMMatrixInverse(nullptr, parent_matrix) * assimp_model.get_bone_offset_matrix(x)
+		bones[x] = assimp_model.get_bone_offset_matrix(x)
 			* matrix * XMMatrixInverse(nullptr, assimp_model.get_bone_offset_matrix(x)) * parent_matrix * assimp_model.get_bone_matrix(x);
-
-		bones[x] = parent_matrix * my_matrix;
 
 		f += 0.001f;
 
@@ -73,7 +71,7 @@ namespace App2
 		for (auto n = 0U; n < child_cnt; ++n)
 		{
 			auto child_id = assimp_model.get_bone_child_id(x, n);
-			CalcBoneFinalMatrix(assimp_model, bones, parent_matrix * my_matrix, child_id);
+			CalcBoneFinalMatrix(assimp_model, bones, bones[x], child_id);
 		}
 
 	}
@@ -110,19 +108,10 @@ namespace App2
 
 	void AddPosition(const AssimpModel & assimp_model, Mesh & mesh, CXMMATRIX & parent_matrix = XMMatrixIdentity(), const int & x = 0)
 	{
-		auto matrix = assimp_model.get_bone_matrix(x);
+		auto matrix = XMMatrixIdentity();
 
-		//if (assimp_model.GetBoneIdByName("mixamorig:RightArm") == x)
-		//{
-		//	matrix = XMMatrixRotationY(-1.5f) * matrix;
-		//}
-
-		//if (assimp_model.GetBoneIdByName("mixamorig:RightHand") == x)
-		//{
-		//	matrix = matrix * XMMatrixRotationY(-1.5f);
-		//}
-
-		XMMATRIX final_matrix = parent_matrix * matrix;
+		XMMATRIX final_matrix = assimp_model.get_bone_offset_matrix(x)
+			* matrix * XMMatrixInverse(nullptr, assimp_model.get_bone_offset_matrix(x)) * parent_matrix * assimp_model.get_bone_matrix(x);
 
 		if (x != 0)
 		{
@@ -166,10 +155,10 @@ namespace App2
 
 	void Initalize(void)
 	{
-		test = new AssimpModel("boxing.fbx");
+		test = new AssimpModel("xbot.fbx");
 		//ShowStaticModel(test);
 		ShowBone(*test);
-		ShowSkinnedModel(*test);
+		//ShowSkinnedModel(*test);
 	}
 
 	void Finalize(void)
