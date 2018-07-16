@@ -30,8 +30,6 @@ std::unordered_map<std::string, std::shared_ptr<Shader>> shaders_;
 D3D11_VIEWPORT viewport_;
 std::vector<RenderingObject> rendering_objects_;
 
-DirectX::XMMATRIX bones_matrix_[255];
-DirectX::XMMATRIX bones_anim_matrix_[255];
 DirectX::XMMATRIX bones_final_matrix_[255];
 
 void Graphics::Initalize(void)
@@ -296,9 +294,6 @@ bool Graphics::Begin(void)
 
 	context_->OMSetRenderTargets(1, back_buffer_rtv_.GetAddressOf(), dsv_.Get());
 	context_->RSSetViewports(1, &viewport_);
-	
-	for (int n = 0; n < 255; ++n)
-		bones_final_matrix_[n] = bones_anim_matrix_[n];
 
 	struct CB
 	{
@@ -437,20 +432,11 @@ void Graphics::SetupModel(Model & model)
 	LoadShader(rendering_object_.shader_);
 }
 
-void Graphics::SetupBones(std::vector<DirectX::XMMATRIX> & bones)
-{
-	auto size = bones.size();
-	for (auto n = 0U; n < size; ++n)
-	{
-		bones_matrix_[n] = bones[n];
-	}
-}
-
 void Graphics::SetupBonesAnim(std::vector<DirectX::XMMATRIX>& bones)
 {
 	auto size = bones.size();
 	for (auto n = 0U; n < size; ++n)
 	{
-		bones_anim_matrix_[n] = bones[n];
+		bones_final_matrix_[n] = bones[n];
 	}
 }

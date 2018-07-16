@@ -4,7 +4,7 @@
 #include "graphics.h"
 #include "gui.h"
 
-#include <assimp\Importer.hpp>
+#include <assimp\this->importer_.hpp>
 #include <assimp\scene.h>
 #include <assimp\postprocess.h>
 

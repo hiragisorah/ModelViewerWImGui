@@ -20,13 +20,13 @@ namespace App2
 		{
 			auto & mesh = model.meshes_[n];
 
-			for (unsigned int v = 0; v < assimp_model.get_vtx_cnt(n); ++v)
+			for (auto v = 0U; v < assimp_model.get_vtx_cnt(n); ++v)
 			{
 				auto & pos = assimp_model.get_position(n, v);
 				auto & norm = assimp_model.get_normal(n, v);
 				auto & uv = assimp_model.get_texcoord(n, v);
 				VertexBoneData bd;
-				for (unsigned int b = 0; b < 4; ++b)
+				for (auto b = 0U; b < 4; ++b)
 				{
 					bd.ids_[b] = assimp_model.get_bone_id(n, v, b);
 					bd.weights_[b] = assimp_model.get_bone_weight(n, v, b);
@@ -36,7 +36,7 @@ namespace App2
 
 			mesh.transform_ = assimp_model.get_mesh_transformation(n);
 
-			for (unsigned int i = 0; i < assimp_model.get_index_cnt(n); ++i)
+			for (auto i = 0U; i < assimp_model.get_index_cnt(n); ++i)
 			{
 				auto & index = assimp_model.get_index(n, i);
 				mesh.indices_.emplace_back(index);
@@ -52,21 +52,26 @@ namespace App2
 
 		static float f = 0.f;
 
-		//if (assimp_model.GetBoneIdByName("mixamorig:RightForeArm") == x)
-		//	matrix = XMMatrixRotationZ(f);
+		if (assimp_model.GetBoneIdByName("mixamorig:RightForeArm") == x)
+			matrix = XMMatrixRotationZ(f);
 
-		//if (assimp_model.GetBoneIdByName("mixamorig:RightArm") == x)
-		//	matrix = XMMatrixRotationY(f);
+		if (assimp_model.GetBoneIdByName("mixamorig:RightArm") == x)
+			matrix = XMMatrixRotationY(f);
 
-		//if (assimp_model.GetBoneIdByName("mixamorig:RightHand") == x)
-		//	matrix = XMMatrixRotationZ(f);
+		if (assimp_model.GetBoneIdByName("mixamorig:RightHand") == x)
+			matrix = XMMatrixRotationZ(f);
+
+		if (assimp_model.GetBoneIdByName("mixamorig:RightLeg") == x)
+			matrix = XMMatrixRotationZ(f);
+
+		if (assimp_model.GetBoneIdByName("mixamorig:LeftLeg") == x)
+			matrix = XMMatrixRotationY(f);
 
 		bones[x] = assimp_model.get_bone_offset_matrix(x)
 			* matrix * XMMatrixInverse(nullptr, assimp_model.get_bone_offset_matrix(x)) * parent_matrix * assimp_model.get_bone_matrix(x);
 
 		f += 0.001f;
 
-		 
 		auto child_cnt = assimp_model.get_bone_child_cnt(x);
 		for (auto n = 0U; n < child_cnt; ++n)
 		{
@@ -158,7 +163,7 @@ namespace App2
 		test = new AssimpModel("xbot.fbx");
 		//ShowStaticModel(test);
 		ShowBone(*test);
-		//ShowSkinnedModel(*test);
+		ShowSkinnedModel(*test);
 	}
 
 	void Finalize(void)
