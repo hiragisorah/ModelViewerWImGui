@@ -50,7 +50,7 @@ VsOut VS(VsIn input)
 
     output.sv_position_ = mul(float4(input.position_, 1.f), wvp);
     output.position_ = mul(float4(input.position_, 1.f), g_world);
-    output.normal_.xyz = normalize(mul(input.normal_, (float3x3) g_world));
+    output.normal_.xyz = input.normal_;
     output.uv_ = input.uv_;
 
     return output;

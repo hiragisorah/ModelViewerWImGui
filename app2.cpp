@@ -46,40 +46,25 @@ namespace App2
 		return model;
 	}
 
-	void CalcBoneFinalMatrix(const AssimpModel & assimp_model, std::vector<XMMATRIX> & bones, const XMMATRIX & parent_matrix = XMMatrixIdentity(), const XMMATRIX & reverse_parent_matrix = XMMatrixIdentity(), const int & x = 0)
+	void CalcBoneFinalMatrix(const AssimpModel & assimp_model, std::vector<XMMATRIX> & bones, const XMMATRIX & parent_matrix = XMMatrixIdentity(), const int & x = 0)
 	{
-		auto matrix = assimp_model.get_bone_matrix(x);
+		auto matrix = XMMatrixIdentity();
 
 		static float f = 0.f;
 
-		//if (assimp_model.GetBoneIdByName("mixamorig:RightArm") == x)
-		//{
-		//	matrix = assimp_model.get_bone_final_offset_matrix(x);
-		//	matrix *= XMMatrixRotationY(-1.5f);
-		//	matrix *= XMMatrixInverse(nullptr, assimp_model.get_bone_final_offset_matrix(x));
-		//	matrix *= assimp_model.get_bone_matrix(x);
-		//}
+		if (assimp_model.GetBoneIdByName("mixamorig:RightForeArm") == x)
+			matrix = XMMatrixRotationZ(f);
 
 		if (assimp_model.GetBoneIdByName("mixamorig:RightArm") == x)
-		{
-			matrix = assimp_model.get_bone_offset_matrix(x);
-			matrix *= XMMatrixRotationY(f);
-			matrix *= XMMatrixInverse(nullptr, assimp_model.get_bone_offset_matrix(x));
-			matrix *= assimp_model.get_bone_matrix(x);
-			bones[x] = matrix * reverse_parent_matrix;
-		}
-		else if (assimp_model.GetBoneIdByName("mixamorig:RightHand") == x)
-		{
-			matrix = assimp_model.get_bone_offset_matrix(x);
-			matrix *= XMMatrixRotationY(f);
-			matrix *= XMMatrixInverse(nullptr, assimp_model.get_bone_offset_matrix(x));
-			matrix *= assimp_model.get_bone_matrix(x);
-			bones[x] = matrix * reverse_parent_matrix;
-		}
-		else
-		{
-			bones[x] = parent_matrix * matrix;
-		}
+			matrix = XMMatrixRotationY(f);
+
+		if (assimp_model.GetBoneIdByName("mixamorig:RightHand") == x)
+			matrix = XMMatrixRotationZ(f);
+
+		auto my_matrix = XMMatrixInverse(nullptr, parent_matrix) * assimp_model.get_bone_offset_matrix(x)
+			* matrix * XMMatrixInverse(nullptr, assimp_model.get_bone_offset_matrix(x)) * parent_matrix * assimp_model.get_bone_matrix(x);
+
+		bones[x] = parent_matrix * my_matrix;
 
 		f += 0.001f;
 
@@ -88,7 +73,7 @@ namespace App2
 		for (auto n = 0U; n < child_cnt; ++n)
 		{
 			auto child_id = assimp_model.get_bone_child_id(x, n);
-			CalcBoneFinalMatrix(assimp_model, bones, parent_matrix * matrix, matrix * reverse_parent_matrix, child_id);
+			CalcBoneFinalMatrix(assimp_model, bones, parent_matrix * my_matrix, child_id);
 		}
 
 	}
@@ -127,22 +112,22 @@ namespace App2
 	{
 		auto matrix = assimp_model.get_bone_matrix(x);
 
-		if (assimp_model.GetBoneIdByName("mixamorig:RightArm") == x)
-		{
-			matrix = XMMatrixRotationY(-1.5f) * matrix;
-		}
+		//if (assimp_model.GetBoneIdByName("mixamorig:RightArm") == x)
+		//{
+		//	matrix = XMMatrixRotationY(-1.5f) * matrix;
+		//}
 
 		//if (assimp_model.GetBoneIdByName("mixamorig:RightHand") == x)
 		//{
 		//	matrix = matrix * XMMatrixRotationY(-1.5f);
 		//}
 
-		XMMATRIX final_matrix = matrix * parent_matrix;
+		XMMATRIX final_matrix = parent_matrix * matrix;
 
 		if (x != 0)
 		{
 			auto & parent_pos = parent_matrix.r[3];
-			mesh.vertices_.emplace_back(XMFLOAT3(XMVectorGetX(parent_pos), XMVectorGetY(parent_pos), XMVectorGetZ(parent_pos)), XMFLOAT3(0, 0, 0), XMFLOAT2(0, 0));
+			mesh.vertices_.emplace_back(XMFLOAT3(XMVectorGetX(parent_pos), XMVectorGetY(parent_pos), XMVectorGetZ(parent_pos)), XMFLOAT3(1, 0, 0), XMFLOAT2(0, 0));
 
 			auto & pos = final_matrix.r[3];
 			mesh.vertices_.emplace_back(XMFLOAT3(XMVectorGetX(pos), XMVectorGetY(pos), XMVectorGetZ(pos)), XMFLOAT3(0, 0, 0), XMFLOAT2(0, 0));
