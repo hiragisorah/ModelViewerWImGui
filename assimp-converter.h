@@ -14,6 +14,7 @@ public:
 	{
 		DirectX::XMMATRIX matrix_;
 		DirectX::XMMATRIX offset_matrix_;
+		DirectX::XMMATRIX final_offset_matrix_;
 		std::string name_;
 
 		int parent_id_;
@@ -70,10 +71,10 @@ private:
 	DirectX::XMMATRIX global_inverse_matrix_;
 
 private:
-	aiNode * const FindNodeRecursiveByName(aiNode * const node, const std::string & name) const;
+	aiNode * const FindNodeRecursiveByName(aiNode * const node, std::string name) const;
 
 public:
-	const int GetBoneIdByName(const std::string & name);
+	const int GetBoneIdByName(const std::string name) const;
 
 public:
 	const unsigned int get_mesh_cnt(void) const;
@@ -88,12 +89,13 @@ public:
 	const DirectX::XMFLOAT2 & get_texcoord(const unsigned int & mesh_num, const unsigned int & vtx_num) const;
 	const DirectX::XMMATRIX & get_bone_matrix(const unsigned int & bone_num) const;
 	const DirectX::XMMATRIX & get_bone_offset_matrix(const unsigned int & bone_num) const;
+	const DirectX::XMMATRIX & get_bone_final_offset_matrix(const unsigned int & bone_num) const;
 	const std::string & get_bone_name(const unsigned int & bone_num) const;
 	const int get_bone_id(const std::string name) const;
 	const unsigned int & get_bone_id(const unsigned int & mesh_num, const unsigned int & vtx_num, const unsigned int & bone_index) const;
 	const int & get_bone_parent_id(const unsigned int & bone_id) const;
 	const unsigned int get_bone_child_cnt(const unsigned int & bone_id) const;
-	const int & get_bone_child_id(const unsigned int & bone_id, const unsigned int & child_id) const;
+	const int & get_bone_child_id(const unsigned int & bone_id, const unsigned int & child_num) const;
 	const float & get_bone_weight(const unsigned int & mesh_num, const unsigned int & vtx_num, const unsigned int & bone_index) const;
 	const int & get_material_id(const unsigned int & mesh_num) const;
 	const std::string & get_texture_name(const int & material_id) const;

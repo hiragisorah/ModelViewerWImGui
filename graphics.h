@@ -55,6 +55,7 @@ struct Mesh
 	std::vector<Vertex> vertices_;
 	std::vector<unsigned int> indices_;
 	std::string texture_;
+	DirectX::XMMATRIX transform_ = DirectX::XMMatrixIdentity();
 };
 
 struct Model
@@ -72,6 +73,7 @@ struct RenderingObject
 		ComPtr<ID3D11Buffer> vertex_buffer_;
 		ComPtr<ID3D11Buffer> index_buffer_;
 		unsigned int index_cnt_ = 0;
+		DirectX::XMMATRIX transform_;
 	};
 
 	std::string shader_;

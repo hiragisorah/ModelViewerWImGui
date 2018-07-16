@@ -106,7 +106,7 @@ void Graphics::Initalize(void)
 		D3D11_RASTERIZER_DESC desc = {};
 
 		desc.FillMode = D3D11_FILL_MODE::D3D11_FILL_SOLID;
-		desc.CullMode = D3D11_CULL_MODE::D3D11_CULL_FRONT;
+		desc.CullMode = D3D11_CULL_MODE::D3D11_CULL_BACK;
 
 		ComPtr<ID3D11RasterizerState> rs;
 		
@@ -296,7 +296,7 @@ bool Graphics::Begin(void)
 
 	context_->OMSetRenderTargets(1, back_buffer_rtv_.GetAddressOf(), dsv_.Get());
 	context_->RSSetViewports(1, &viewport_);
-
+	
 	for (int n = 0; n < 255; ++n)
 		bones_final_matrix_[n] = bones_anim_matrix_[n];
 
@@ -309,7 +309,7 @@ bool Graphics::Begin(void)
 
 	static auto rot = 0.f;
 
-	rot += 0.03f;
+	//rot += 0.03f;
 	static auto f = 0.08f;
 
 	bool a = GetKeyState(VK_UP) & 0x8000;
@@ -318,39 +318,39 @@ bool Graphics::Begin(void)
 
 	f+= (static_cast<int>(a) - static_cast<int>(b)) * 0.003f;
 
-	cb.world = DirectX::XMMatrixScaling(f, f, f) * DirectX::XMMatrixRotationY(rot);
-	cb.view = DirectX::XMMatrixLookAtLH(DirectX::XMVectorSet(0.f, 0.f, -40.f, 0.f), DirectX::XMVectorZero(), DirectX::XMVectorSet(0.f, 1.f, 0.f, 0.f));
-	cb.proj = DirectX::XMMatrixPerspectiveFovLH(DirectX::XM_PIDIV4, 1280.f / 720.f, 0.1f, 1000.f);
-
 	for (auto & rendering_object_ : rendering_objects_)
 	{
 		auto & shader_ = shaders_[rendering_object_.shader_];
 		context_->VSSetShader(shader_->vertex_shader_.Get(), nullptr, 0);
 		context_->PSSetShader(shader_->pixel_shader_.Get(), nullptr, 0);
 
-		void * pcb = &cb;
-
-		if (shader_->constant_buffer_[0])
-			context_->UpdateSubresource(shader_->constant_buffer_[0].Get(), 0, nullptr, pcb, 0, 0);
-
-		pcb = bones_final_matrix_;
-
-		if (shader_->constant_buffer_.size() > 1 && shader_->constant_buffer_[1])
-			context_->UpdateSubresource(shader_->constant_buffer_[1].Get(), 0, nullptr, pcb, 0, 0);
-
-		for (unsigned int n = 0; n < shader_->constant_buffer_.size(); ++n)
-		{
-			if (shader_->constant_buffer_[n])
-			{
-				context_->VSSetConstantBuffers(n, 1, shader_->constant_buffer_[n].GetAddressOf());
-				context_->PSSetConstantBuffers(n, 1, shader_->constant_buffer_[n].GetAddressOf());
-			}
-		}
-
 		context_->IASetInputLayout(shader_->input_layout_.Get());
 
 		for (auto & mesh : rendering_object_.mesh_)
 		{
+			cb.world = DirectX::XMMatrixScaling(f, f, f) * DirectX::XMMatrixRotationY(rot);
+			cb.view = DirectX::XMMatrixLookAtLH(DirectX::XMVectorSet(0.f, 0.f, -40.f, 0.f), DirectX::XMVectorZero(), DirectX::XMVectorSet(0.f, 1.f, 0.f, 0.f));
+			cb.proj = DirectX::XMMatrixPerspectiveFovLH(DirectX::XM_PIDIV4, 1280.f / 720.f, 0.1f, 1000.f);
+
+			void * pcb = &cb;
+
+			if (shader_->constant_buffer_[0])
+				context_->UpdateSubresource(shader_->constant_buffer_[0].Get(), 0, nullptr, pcb, 0, 0);
+
+			pcb = bones_final_matrix_;
+
+			if (shader_->constant_buffer_.size() > 1 && shader_->constant_buffer_[1])
+				context_->UpdateSubresource(shader_->constant_buffer_[1].Get(), 0, nullptr, pcb, 0, 0);
+
+			for (unsigned int n = 0; n < shader_->constant_buffer_.size(); ++n)
+			{
+				if (shader_->constant_buffer_[n])
+				{
+					context_->VSSetConstantBuffers(n, 1, shader_->constant_buffer_[n].GetAddressOf());
+					context_->PSSetConstantBuffers(n, 1, shader_->constant_buffer_[n].GetAddressOf());
+				}
+			}
+
 			context_->IASetIndexBuffer(mesh.index_buffer_.Get(), DXGI_FORMAT_R32_UINT, 0);
 			auto stride = sizeof(Vertex);
 			auto offset = 0U;
@@ -402,6 +402,8 @@ void Graphics::SetupModel(Model & model)
 
 		auto & vertices = model.meshes_[n].vertices_;
 		auto & indices = model.meshes_[n].indices_;
+
+		rendering_object_.mesh_[n].transform_ = model.meshes_[n].transform_;
 
 		{
 			D3D11_BUFFER_DESC bd = {};
